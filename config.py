@@ -17,6 +17,7 @@ default_str_for_termux_prop = "default-working-directory = " + true_termux_home
 
 # Список арок которые нужно скрыть
 app_list = (
+    "com.kylecorry.trail_sense",
 	"ua.privatbank.ap24",
 	"ua.gov.diia.app",
 	"csmh.ifibbpb",

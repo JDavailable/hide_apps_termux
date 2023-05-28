@@ -2,10 +2,12 @@
 import asyncio
 import argparse
 import os
+import subprocess
 from os import path, remove
 from subprocess import run
 from shutil import rmtree
 from time import time
+
 
 from config import DEBUG_IS
 from config import path_to_screen_folder
@@ -35,14 +37,14 @@ async def hide_app(): # Скрытие приложений посредство
     
     if key:
         for i in app_list:
-            run(f"su -c pm unhide {i}", shell=True,  check=False, capture_output=False)
+            run(f"su -c pm unhide {i}", shell=True,  check=False, stdout=subprocess.DEVNULL)
         for p in app_list_user10:
-            run(f"su -c pm unhide --user 10 {p}", shell=True, check=False, capture_output=False)
+            run(f"su -c pm unhide --user 10 {p}", shell=True, check=False, stdout=subprocess.DEVNULL)
     if not key:
         for i in app_list:
-            run(f"su -c pm hide {i}", shell=True, check=False, capture_output=False)
+            run(f"su -c pm hide {i}", shell=True, check=False, stdout=subprocess.DEVNULL)
         for p in app_list_user10:
-            run(f"su -c pm hide --user 10 {p}", shell=True, check=False, capture_output=False)
+            run(f"su -c pm hide --user 10 {p}", shell=True, check=False, stdout=subprocess.DEVNULL)
 
 async def del_tg_downloads(): # Фунция удаляющая папку телеги в загрузках
 
@@ -104,7 +106,6 @@ async def hide_termux_home():
         with open(path_to_conf, "r") as config_file:
             data = config_file.readlines()
             for index, item in enumerate(data):
-                print(f"{index}: {item}")
                 if home_path == item or true_termux_home == item:
                     data[index] = true_termux_home
                     try:
@@ -180,20 +181,20 @@ async def main():
         await asyncio.gather(*tasks)
 
     if not key:
-            tasks =[
-                asyncio.create_task(del_tg_downloads()), 
-                asyncio.create_task(del_screenshots()), 
-                asyncio.create_task(set_default_launcher()),
-                asyncio.create_task(del_screenrecords()),
+        tasks =[
+            asyncio.create_task(del_tg_downloads()), 
+            asyncio.create_task(del_screenshots()), 
+            asyncio.create_task(set_default_launcher()),
+            asyncio.create_task(del_screenrecords()),
             ]
-            await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
 if not key:
     timer = time() + 2
     temp = 0
     while True:
-	    result = os.popen('su -c getevent /dev/input/event4 |  grep -m 1 "00000001" ').read()
-	    if result:
+        i_trigger = run('su -c getevent -t /dev/input/event4 | grep -e 00000001  --line-buffered -m 1| grep -o \'\[[^]]*\]\' --line-buffered', shell=True, capture_output=True)
+        if i_trigger:
 	        temp += 1
 	        if temp == 3:
 	            asyncio.run(main())
