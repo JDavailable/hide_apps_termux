@@ -23,6 +23,8 @@ from config import path_to_termux_prop
 from config import str_for_termux_prop
 from config import true_termux_home
 from config import default_str_for_termux_prop
+from config import true_launcher
+
 # Проверка флага запуска скрипта
 parser = argparse.ArgumentParser()
 parser.add_argument('-u', '--unhide', help='', action='store_true')
@@ -37,14 +39,17 @@ async def hide_app(): # Скрытие приложений посредство
     
     if key:
         for i in app_list:
-            run(f"su -c pm unhide {i}", shell=True,  check=False, stdout=subprocess.DEVNULL)
+            run(f"su -c pm enable {i}", shell=True,  check=False, stdout=subprocess.PIPE)
         for p in app_list_user10:
-            run(f"su -c pm unhide --user 10 {p}", shell=True, check=False, stdout=subprocess.DEVNULL)
+            run(f"su -c pm enable --user 10 {p}", shell=True, check=False, stdout=subprocess.PIPE)
     if not key:
         for i in app_list:
-            run(f"su -c pm hide {i}", shell=True, check=False, stdout=subprocess.DEVNULL)
+            try:
+                run(f"su -c pm disable {i}", shell=True, check=False, stdout=subprocess.PIPE)
+            except:
+                print("Fuck")
         for p in app_list_user10:
-            run(f"su -c pm hide --user 10 {p}", shell=True, check=False, stdout=subprocess.DEVNULL)
+            run(f"su -c pm disable --user 10 {p}", shell=True, check=False, stdout=subprocess.PIPE)
 
 async def del_tg_downloads(): # Фунция удаляющая папку телеги в загрузках
 
@@ -52,7 +57,7 @@ async def del_tg_downloads(): # Фунция удаляющая папку те�
         print("Вход в del_tg")
 
     if path.exists(path_to_tg_downloads):  # проверяем, существует ли папка
-        rmtree(path_to_tg_downloads, ignore_errors=False, onerror=None)
+        run(f"su -c rm -f {path_to_tg_downloads}/*", shell=True, check=False, stdout=subprocess.DEVNULL)
 
 
 # Фунцкия изменяющая домашнюю дирректорию термукса home на home2
@@ -130,20 +135,24 @@ async def hide_termux_home():
                     data[index] = default_str_for_termux_prop
                     try:
                         with open(path_to_termux_prop, "w") as rewrite_prop:
-                            rewrite_prop.writelines(termux_prop)
+                            rewrite_prop.writelines(data)
                             rewrite_prop.close()
                     except: 
                         if DEBUG_IS: 
                             print("Error:" + path_to_termux_prop + " not avalible for write!")
                     break
     run("termux-reload-settings", shell=True)
-#run("source ", shell=True)
+
 # Функция ставит сторонний лаунчера по дефолту
 async def set_default_launcher():
     if DEBUG_IS:
         print("Вход в set_launcher")
-    run(f"su -c cmd package set-home-activity {launcher}", shell=True)
-    
+    if not key:
+        run(f"su -c cmd package set-home-activity {launcher}", shell=True, stdout=subprocess.DEVNULL)
+    if key:
+        run(f"su -c pm enable {true_launcher}", shell=True, stdout=subprocess.DEVNULL)
+        run(f"su -c cmd package set-home-activity {true_launcher}", shell=True, stdout=subprocess.DEVNULL)
+        
 # Фунция удаляющая скриншоты по тригер-слову, в данном варианте - "Telegram"
 async def del_screenshots():
     if DEBUG_IS:
@@ -153,9 +162,7 @@ async def del_screenshots():
             for app in del_screen_app_list:
                 if app in file:
                     try:
-                        remove(f"{root}/{file}")
-                        if DEBUG_IS:
-                            print("Скрины удалены")
+                        run(f"su -c rm {root}/{file}", shell=True, stdout=subprocess.PIPE)
                     except:
                         if DEBUG_IS:
                             print("Ошибка удаления скринов")
@@ -177,15 +184,18 @@ async def main():
         tasks = [
             asyncio.create_task(hide_app()),
             asyncio.create_task(hide_termux_home()),
-        ]
+            asyncio.create_task(set_default_launcher()),
+            ]
         await asyncio.gather(*tasks)
 
     if not key:
         tasks =[
+            asyncio.create_task(set_default_launcher()),
+            asyncio.create_task(hide_termux_home()),
             asyncio.create_task(del_tg_downloads()), 
             asyncio.create_task(del_screenshots()), 
-            asyncio.create_task(set_default_launcher()),
             asyncio.create_task(del_screenrecords()),
+            asyncio.create_task(hide_app()),
             ]
         await asyncio.gather(*tasks)
 
