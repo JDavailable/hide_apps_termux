@@ -1,4 +1,4 @@
-# version 1.4
+# version 2.0
 import asyncio
 import argparse
 import os
@@ -93,9 +93,13 @@ async def hide_termux_home():
        
         with open(path_to_termux_prop, "r") as term_prop_file:
             termux_prop = term_prop_file.readlines()
-            for index, item in enumerate(termux_prop):
-                if str_for_termux_prop == item or default_str_for_termux_prop == item:
-                    data[index] = str_for_termux_prop
+
+            for indexx, itemm in enumerate(termux_prop):
+                # print(f"{index} : {item}")
+                if str_for_termux_prop == str(itemm) or default_str_for_termux_prop == str(item):
+                    print(indexx)
+                    termux_prop[indexx] = str_for_termux_prop
+
                     try:
                         with open(path_to_termux_prop, "w") as rewrite_prop:
                             rewrite_prop.writelines(termux_prop)
@@ -110,9 +114,9 @@ async def hide_termux_home():
            ################## Работа с файлом .zshrc при флаге unhide ######################
         with open(path_to_conf, "r") as config_file:
             data = config_file.readlines()
-            for index, item in enumerate(data):
-                if home_path == item or true_termux_home == item:
-                    data[index] = true_termux_home
+            for indexz, itemz in enumerate(data):
+                if home_path == itemz or true_termux_home == itemz:
+                    data[indexz] = true_termux_home
                     try:
                         with open(path_to_conf, "w") as rewrite_conf:
                             rewrite_conf.writelines(data)
@@ -130,9 +134,14 @@ async def hide_termux_home():
         # if key ↓
         with open(path_to_termux_prop, "r") as term_prop_file:
             termux_prop = term_prop_file.readlines()
-            for index, item in enumerate(termux_prop):
-                if str_for_termux_prop == item:
-                    data[index] = default_str_for_termux_prop
+            for indexzz, itemzz in enumerate(termux_prop):
+                if str_for_termux_prop == itemzz:
+                
+                    print("len: ",len(data))
+                    print(index)
+                    print(data)
+                    #########################
+                    data[indexzz] = default_str_for_termux_prop
                     try:
                         with open(path_to_termux_prop, "w") as rewrite_prop:
                             rewrite_prop.writelines(data)
@@ -149,9 +158,12 @@ async def set_default_launcher():
         print("Вход в set_launcher")
     if not key:
         run(f"su -c cmd package set-home-activity {launcher}", shell=True, stdout=subprocess.DEVNULL)
+        await asyncio.sleep(1)
+        run(f"su -c kill $(su -c pidof -s {true_launcher})", shell=True)
     if key:
-        run(f"su -c pm enable {true_launcher}", shell=True, stdout=subprocess.DEVNULL)
         run(f"su -c cmd package set-home-activity {true_launcher}", shell=True, stdout=subprocess.DEVNULL)
+        await asyncio.sleep(1)
+        run(f"su -c kill $(su -c pidof -s {launcher})", shell=True)
         
 # Фунция удаляющая скриншоты по тригер-слову, в данном варианте - "Telegram"
 async def del_screenshots():
@@ -198,8 +210,7 @@ async def main():
             asyncio.create_task(hide_app()),
             ]
         await asyncio.gather(*tasks)
-
-if not key:
+'''if not key:
     timer = time() + 2
     temp = 0
     while True:
@@ -216,3 +227,5 @@ if not key:
 if key:
     asyncio.run(main())
 
+'''
+asyncio.run(main())

@@ -6,14 +6,14 @@ path_to_screenrecords_folder = "/sdcard/Movies/" # звездочка ОБЯЗА
 
 launcher = "amirz.shade" # Другой лаунчер который установиться как дефолтный
 true_launcher = "com.android.launcher3"
-home_path = "HOME=/data/data/com.termux/files/home2" # Путь к фейковому home для термукс
-true_termux_home = 'HOME=/data/data/com.termux/files/home' # Стандартый home *Измените если вы используете нестандартный home 
+home_path = "HOME=/data/data/com.termux/files/home2" + "\n"# Путь к фейковому home для термукс
+true_termux_home = 'HOME=/data/data/com.termux/files/home' + "\n" # Стандартый home *Измените если вы используете нестандартный home 
 
 path_to_conf = "/data/data/com.termux/files/home/.zshrc"
 path_to_termux_prop = "/data/data/com.termux/files/home/.termux/termux.properties"
 
-str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home2"
-default_str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home"
+str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home2" + "\n"
+default_str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home" + "\n"
 
 # Список арок которые нужно скрыть
 app_list = (
@@ -41,7 +41,8 @@ app_list = (
 	"com.trianguloy.urlchecker",
 	"com.fox2code.mmm",
 	"com.drdisagree.iconify",
-	"github.tornaco.android.thanos"
+	"github.tornaco.android.thanos",
+	"com.lonelycatgames.Xplore"
 	)
 # Такой же список, только для user 10(work profile) !!ПРЕДВАРИТЕЛЬНО ПРОВЕРЬТЕ СОВПАДАЕТ ЛИ USER ID!!
 app_list_user10 = (
