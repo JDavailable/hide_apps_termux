@@ -1,231 +1,211 @@
-# version 2.0
+# v2.5
+
 import asyncio
 import argparse
 import os
 import subprocess
+import re
+
 from os import path, remove
-from subprocess import run
-from shutil import rmtree
-from time import time
+from colorama import Fore, Style
+
+from config import DEBUG_IS, id_other_user, path_to_screen_folder, app_list, app_list_other_user, del_screen_app_list, path_to_tg_downloads, path_to_screenrecords_folder, launcher, home_path, path_to_conf, path_to_termux_prop, str_for_termux_prop, true_termux_home, default_str_for_termux_prop, true_launcher
 
 
-from config import DEBUG_IS
-from config import path_to_screen_folder
-from config import app_list
-from config import app_list_user10
-from config import del_screen_app_list
-from config import path_to_tg_downloads
-from config import path_to_screenrecords_folder
-from config import launcher
-from config import home_path
-from config import path_to_conf
-from config import path_to_termux_prop
-from config import str_for_termux_prop
-from config import true_termux_home
-from config import default_str_for_termux_prop
-from config import true_launcher
-
-# Проверка флага запуска скрипта
-parser = argparse.ArgumentParser()
-parser.add_argument('-u', '--unhide', help='', action='store_true')
- # Необходимые переменные
-args = parser.parse_args()
-key = bool(args.unhide)
-
-async def hide_app(): # Скрытие приложений посредством pm hide и перебора package name из config.py
-
+async def hide_app(key):
     if DEBUG_IS:
-        print("Вход в hide_app")
+        print(f"{Fore.BLUE}Вход в hide_app{Style.RESET_ALL}\n")
+    user_id_ident = False
+    userid_pattern = r"UserInfo\{(\d+):"
+    result = subprocess.run("su -c pm list users", shell=True, text=True, capture_output=True)
+    matches = re.findall(userid_pattern, result.stdout)
     
-    if key:
-        for i in app_list:
-            run(f"su -c pm enable {i}", shell=True,  check=False, stdout=subprocess.PIPE)
-        for p in app_list_user10:
-            run(f"su -c pm enable --user 10 {p}", shell=True, check=False, stdout=subprocess.PIPE)
-    if not key:
-        for i in app_list:
-            try:
-                run(f"su -c pm disable {i}", shell=True, check=False, stdout=subprocess.PIPE)
-            except:
-                print("Fuck")
-        for p in app_list_user10:
-            run(f"su -c pm disable --user 10 {p}", shell=True, check=False, stdout=subprocess.PIPE)
+    if str(id_other_user) in matches:
+        user_id_ident = True
 
-async def del_tg_downloads(): # Фунция удаляющая папку телеги в загрузках
+    try:
+        if key:
+            for i in app_list:
+                try:
+                    result = subprocess.run(["su", "-c", "pm", "enable", i], check=True, stdout=subprocess.PIPE)
+                except subprocess.CalledProcessError as e:
+                    bad_apps_list.append(i)
+                    if DEBUG_IS:
+                        print(f"Error enabling package {Fore.RED}{i}{Style.RESET_ALL}: {e}")
+            if DEBUG_IS:
+                if not bad_apps_list:
+                    print(f"\n{Fore.RED}Проблемные sприложения:{Style.RESET_ALL}\n{bad_apps_list}\n")
 
-    if DEBUG_IS:
-        print("Вход в del_tg")
-
-    if path.exists(path_to_tg_downloads):  # проверяем, существует ли папка
-        run(f"su -c rm -f {path_to_tg_downloads}/*", shell=True, check=False, stdout=subprocess.DEVNULL)
-
-
-# Фунцкия изменяющая домашнюю дирректорию термукса home на home2
-async def hide_termux_home():
-
-    if DEBUG_IS:
-        print("Вход в hide_home")
-
-    if not key:########################################
-               ################## Работа с файлом .zshrc при флаге hide ######################
-
-        with open(path_to_conf, 'r') as config_file:
-        
-            data = config_file.readlines()
+            if user_id_ident:
             
-            for index, item in enumerate(data):
-                if home_path == item:
-                    data[index] = home_path
+                for p in app_list_other_user:
                     try:
-                        with open(path_to_conf, "w") as rewrite_conf:
-                            rewrite_conf.writelines(data)
-                            rewrite_conf.close()
-                    except: 
-                        if DEBUG_IS: 
-                            print("Error:" + path_to_conf + " not avalible for write!")
-                    break
-            else:
-                with open(path_to_conf, "a") as rewrite_conf:
-                    rewrite_conf.write(home_path + '\n')
-                    rewrite_conf.close()
-               
-        ######### """Работа с файлом termux.properties при флаге hide """########
-       
-        with open(path_to_termux_prop, "r") as term_prop_file:
-            termux_prop = term_prop_file.readlines()
+                        subprocess.run(["su", "-c", "pm", "enable", "--user", id_other_user, p], check=True, stdout=subprocess.PIPE)
+                    except subprocess.CalledProcessError as e:
+                        print(f"Error enabling package {p} for user 10: {e}")
+            
+        else:
+            for i in app_list:
+                try:
+                    result = subprocess.run(["su", "-c", "pm", "disable", i], check=True, stdout=subprocess.PIPE)
+                except subprocess.CalledProcessError as e:
+                    bad_apps_list.append(i)
+                    if DEBUG_IS:
+                        print(f"Error disabling package {Fore.RED}{i}{Style.RESET_ALL}: {e}")
+            if DEBUG_IS:
+                print(f"\n{Fore.RED}Проблемные приложения:{Style.RESET_ALL}\n{bad_apps_list}\n")
 
-            for indexx, itemm in enumerate(termux_prop):
-                # print(f"{index} : {item}")
-                if str_for_termux_prop == str(itemm) or default_str_for_termux_prop == str(item):
-                    print(indexx)
-                    termux_prop[indexx] = str_for_termux_prop
-
+            if user_id_ident:
+                for p in app_list_other_user:
                     try:
-                        with open(path_to_termux_prop, "w") as rewrite_prop:
-                            rewrite_prop.writelines(termux_prop)
-                            rewrite_prop.close()
-                    except: 
-                        if DEBUG_IS: 
-                            print("Error:" + path_to_termux_prop + " not avalible for write!")
+                        subprocess.run(["su", "-c", "pm", "disable", "--user", "10", p], check=True, stdout=subprocess.PIPE)
+                    except subprocess.CalledProcessError as e:
+                        print(f"Error disabling package {p} for user 10: {e}")
+            
+    except Exception as e:
+        print(f"Error executing commands: {e}")
 
 
-
-    if key:########################################
-           ################## Работа с файлом .zshrc при флаге unhide ######################
-        with open(path_to_conf, "r") as config_file:
-            data = config_file.readlines()
-            for indexz, itemz in enumerate(data):
-                if home_path == itemz or true_termux_home == itemz:
-                    data[indexz] = true_termux_home
-                    try:
-                        with open(path_to_conf, "w") as rewrite_conf:
-                            rewrite_conf.writelines(data)
-                            rewrite_conf.close()
-                    except: 
-                        if DEBUG_IS: print("Error:" + path_to_conf + " not avalible for write!")
-                    break
-            else:
-                with open(path_to_conf, "a") as config_f:
-                    config_f.write(true_termux_home)
-                    config_f.close()
-                if DEBUG_IS: print(f"String: {home_path} not find in {path_to_conf}\n {true_termux_home} will be addet")
-                
-           ############ Работа с файлом termux.properties при флаге unhide #############
-        # if key ↓
-        with open(path_to_termux_prop, "r") as term_prop_file:
-            termux_prop = term_prop_file.readlines()
-            for indexzz, itemzz in enumerate(termux_prop):
-                if str_for_termux_prop == itemzz:
-                
-                    print("len: ",len(data))
-                    print(index)
-                    print(data)
-                    #########################
-                    data[indexzz] = default_str_for_termux_prop
-                    try:
-                        with open(path_to_termux_prop, "w") as rewrite_prop:
-                            rewrite_prop.writelines(data)
-                            rewrite_prop.close()
-                    except: 
-                        if DEBUG_IS: 
-                            print("Error:" + path_to_termux_prop + " not avalible for write!")
-                    break
-    run("termux-reload-settings", shell=True)
-
-# Функция ставит сторонний лаунчера по дефолту
-async def set_default_launcher():
+async def hide_termux_home(key):
     if DEBUG_IS:
-        print("Вход в set_launcher")
-    if not key:
-        run(f"su -c cmd package set-home-activity {launcher}", shell=True, stdout=subprocess.DEVNULL)
-        await asyncio.sleep(1)
-        run(f"su -c kill $(su -c pidof -s {true_launcher})", shell=True)
-    if key:
-        run(f"su -c cmd package set-home-activity {true_launcher}", shell=True, stdout=subprocess.DEVNULL)
-        await asyncio.sleep(1)
-        run(f"su -c kill $(su -c pidof -s {launcher})", shell=True)
-        
-# Фунция удаляющая скриншоты по тригер-слову, в данном варианте - "Telegram"
+        print(f"{Fore.BLUE}Вход в hide_home{Style.RESET_ALL}\n")
+    try:
+
+        if not key:
+            with open(path_to_conf, 'r') as config_file:
+                data = config_file.readlines()
+                if home_path not in data:
+                    data.append(home_path + '\n')
+                    try:
+                        with open(path_to_conf, "w") as rewrite_conf:
+                            rewrite_conf.writelines(data)
+                    except Exception as e:
+                        if DEBUG_IS:
+                            print(f"Error: {path_to_conf} not available for write: {e}")
+                with open(path_to_termux_prop, "r") as term_prop_file:
+                    termux_prop = term_prop_file.readlines()
+                    if str_for_termux_prop not in termux_prop:
+                        termux_prop.append(str_for_termux_prop)
+                        try:
+                            with open(path_to_termux_prop, "w") as rewrite_prop:
+                                rewrite_prop.writelines(termux_prop)
+                        except Exception as e:
+                            if DEBUG_IS:
+                                print(f"Error: {path_to_termux_prop} not available for write: {e}")
+        else:
+            with open(path_to_conf, "r") as config_file:
+                data = config_file.readlines()
+                if true_termux_home not in data:
+                    data.append(true_termux_home + '\n')
+                    try:
+                        with open(path_to_conf, "w") as rewrite_conf:
+                            rewrite_conf.writelines(data)
+                    except Exception as e:
+                        if DEBUG_IS:
+                            print(f"Error: {path_to_conf} not available for write: {e}")
+                with open(path_to_termux_prop, "r") as term_prop_file:
+                    termux_prop = term_prop_file.readlines()
+                    if default_str_for_termux_prop not in termux_prop:
+                        termux_prop.append(default_str_for_termux_prop)
+                        try:
+                            with open(path_to_termux_prop, "w") as rewrite_prop:
+                                rewrite_prop.writelines(termux_prop)
+                        except Exception as e:
+                            if DEBUG_IS:
+                                print(f"Error: {path_to_termux_prop} not available for write: {e}")
+        print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+    except Exception as e:
+        print("Err",e)
+
+async def set_default_launcher(key):
+    if DEBUG_IS: print(f"{Fore.BLUE}Вход в set_launcher{Style.RESET_ALL}\n")
+    try:
+        if not key:
+            try:
+                subprocess.run(["su", "-c", "cmd package set-home-activity", launcher], shell=False, stdout=subprocess.PIPE)
+                subprocess.run(f"su -c kill $(su -c pidof -s {true_launcher})", shell=True, stdout=subprocess.DEVNULL)
+            except Exception as e:
+                if DEBUG_IS:
+                    print(f"{Fore.RED}Error:{Style.RESET_ALL} Failed to set default launcher: {e}")
+        else:
+            try:
+                subprocess.run(["su", "-c", "cmd package set-home-activity", true_launcher], shell=False, stdout=subprocess.PIPE)
+                subprocess.run(f"su -c kill $(su -c pidof -s {launcher})", shell=True, stdout=subprocess.DEVNULL)
+            except Exception as e:
+                if DEBUG_IS:
+                    print(f"Error: Failed to set true launcher: {e}")
+        print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+    except Exception:
+        print("Err")
+
+async def del_tg_downloads():
+    if DEBUG_IS:
+        print(f"{Fore.BLUE}Вход в del_tg_downloads{Style.RESET_ALL}\n")
+    try:
+        for root, dirs, files in os.walk(path_to_tg_downloads):
+            for file in files:
+                if "Telegram" in file:
+                    os.remove(os.path.join(root, file))
+        if DEBUG_IS:
+            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+    except Exception as e:
+        if DEBUG_IS:
+            print(f"Error: Failed to delete Telegram downloads: {e}")
+
+
 async def del_screenshots():
     if DEBUG_IS:
-        print("Вход в del_sreenshots")
-    for root, dirs, files in os.walk(path_to_screen_folder):
-        for file in files:
-            for app in del_screen_app_list:
-                if app in file:
-                    try:
-                        run(f"su -c rm {root}/{file}", shell=True, stdout=subprocess.PIPE)
-                    except:
-                        if DEBUG_IS:
-                            print("Ошибка удаления скринов")
+        print(f"{Fore.BLUE}Вход в del_sreenshots{Style.RESET_ALL}\n")
+    try:
+        for root, dirs, files in os.walk(path_to_screen_folder):
+            for file in files:
+                for app in del_screen_app_list:
+                    if app in file:
+                        os.remove(os.path.join(root, file))
+        if DEBUG_IS:
+            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+    except Exception as e:
+        if DEBUG_IS:
+            print(f"Error: Failed to delete screenshots: {e}")
 
 
 async def del_screenrecords():
     if DEBUG_IS:
-        print("Вход в del_sreenrecors")
-        try:
-            run(f"su -c rm -f {path_to_screenrecords_folder}*", shell=True)
-            if DEBUG_IS:
-                print("Видео удалены")
-        except:
-            if DEBUG_IS:
-                print("Ошибка удаления видео")
+        print(f"{Fore.BLUE}Вход в del_sreenrecors{Style.RESET_ALL}\n")
+    try:
+        subprocess.run(f"su -c rm -rf {path_to_screenrecords_folder}", shell=True)
+        if DEBUG_IS:
+            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+    except Exception as e:
+        if DEBUG_IS:
+            print(f"{Fore.RED}Error: Failed to delete screen recordings:{Style.RESET_ALL}\n {e}")
 
-async def main():
+
+async def main(key):
     if key:
         tasks = [
-            asyncio.create_task(hide_app()),
-            asyncio.create_task(hide_termux_home()),
-            asyncio.create_task(set_default_launcher()),
-            ]
+            asyncio.create_task(hide_app(key)),
+            asyncio.create_task(hide_termux_home(key)),
+            asyncio.create_task(set_default_launcher(key)),
+        ]
         await asyncio.gather(*tasks)
-
-    if not key:
-        tasks =[
-            asyncio.create_task(set_default_launcher()),
-            asyncio.create_task(hide_termux_home()),
-            asyncio.create_task(del_tg_downloads()), 
-            asyncio.create_task(del_screenshots()), 
+    else:
+        tasks = [
+            asyncio.create_task(set_default_launcher(key)),
+            asyncio.create_task(hide_termux_home(key)),
+            asyncio.create_task(del_tg_downloads()),
+            asyncio.create_task(del_screenshots()),
             asyncio.create_task(del_screenrecords()),
-            asyncio.create_task(hide_app()),
-            ]
+            asyncio.create_task(hide_app(key)),
+        ]
         await asyncio.gather(*tasks)
-'''if not key:
-    timer = time() + 2
-    temp = 0
-    while True:
-        i_trigger = run('su -c getevent -t /dev/input/event4 | grep -e 00000001  --line-buffered -m 1| grep -o \'\[[^]]*\]\' --line-buffered', shell=True, capture_output=True)
-        if i_trigger:
-	        temp += 1
-	        if temp == 3:
-	            asyncio.run(main())
-	            break
 
-	        if time() > timer:
-	            temp = 0
-	            timer = time() + 2
-if key:
-    asyncio.run(main())
 
-'''
-asyncio.run(main())
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', '--unhide', help='', action='store_true')
+    args = parser.parse_args()
+    key = bool(args.unhide)
+    bad_apps_list = []
+    user_id_ident = False
+    asyncio.run(main(key))

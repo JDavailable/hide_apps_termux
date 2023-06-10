@@ -20,32 +20,30 @@ app_list = (
     "com.exteragram.messenger",
     "com.kylecorry.trail_sense",
 	"ua.privatbank.ap24",
-	"ua.gov.diia.app",
-	"io.github.huskydg.magisk",
+#	"ua.gov.diia.app",
 	"com.looker.droidify", 
 	"dev.ukanth.ufirewall.donate",
-	"com.mixplorer",
 	"com.foobnix.pro.pdf.reader",
 	"com.github.libretube",
 	"ru.fourpda.client",
-	"com.foxdebug.acode",
-	"com.nononsenseapps.feeder",
-	"com.blacksquircle.ui",
 	"org.cryptomator",
-	"org.chromium.chrome",
 	"us.spotco.fennec_dos",
 	"io.github.deweyreed.clipboardcleaner",
 	"org.nuntius35.wrongpinshutdown",
 	"mstoic.apps.disablefingerprintunlocktemporarily",
 	"com.smartpack.kernelmanager",
 	"com.trianguloy.urlchecker",
-	"com.fox2code.mmm",
-	"com.drdisagree.iconify",
 	"github.tornaco.android.thanos",
-	"com.lonelycatgames.Xplore"
+	"com.lonelycatgames.Xplore",
+	"com.topjohnwu.magisk",
+	"material.hunter",
+	"com.mayank.rucky",
+	"org.omnirom.logcat",
+	
 	)
 # Такой же список, только для user 10(work profile) !!ПРЕДВАРИТЕЛЬНО ПРОВЕРЬТЕ СОВПАДАЕТ ЛИ USER ID!!
-app_list_user10 = (
+id_other_user = 10
+app_list_other_user = (
 
 	)
 
