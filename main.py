@@ -180,6 +180,25 @@ async def del_screenrecords():
         if DEBUG_IS:
             print(f"{Fore.RED}Error: Failed to delete screen recordings:{Style.RESET_ALL}\n {e}")
 
+async def disable_fingerprint_unlock():
+    if DEBUG_IS: print(f"{Fore.BLUE}Вход в disable_figerprint{Style.RESET_ALL}")
+    if not key:
+        try: 
+            subprocess.run("dpm remove-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
+            subprocess.run(["su","-c","pm disable mstoic.apps.disablefingerprintunlocktemporarily"], shell=False, stdout=subprocess.PIPE)            
+        except Exception as e:
+            if DEBUG_IS:
+                print(f"{Fore.RED}Error:{Style.RESET_ALL}{e}")
+    else:
+        try:
+            subprocess.run(["su","-c","pm enable mstoic.apps.disablefingerprintunlocktemporarily"], shell=False, stdout=subprocess.PIPE)            
+            subprocess.run("dpm set-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
+
+        except Exception as e:
+            if DEBUG_IS:
+                print(f"{Fore.RED}Error:{Style.RESET_ALL}{e}")
+
+
 
 async def main(key):
     if key:
