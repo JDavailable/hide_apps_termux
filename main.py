@@ -113,7 +113,7 @@ async def hide_termux_home(key):
                         except Exception as e:
                             if DEBUG_IS:
                                 print(f"Error: {path_to_termux_prop} not available for write: {e}")
-        print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+        print(done)
     except Exception as e:
         print("Err",e)
 
@@ -134,9 +134,9 @@ async def set_default_launcher(key):
             except Exception as e:
                 if DEBUG_IS:
                     print(f"Error: Failed to set true launcher: {e}")
-        print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
-    except Exception:
-        print("Err")
+        print(done)
+    except Exception as e:
+        print("Err", e)
 
 async def del_tg_downloads():
     if DEBUG_IS:
@@ -147,10 +147,21 @@ async def del_tg_downloads():
                 if "Telegram" in file:
                     os.remove(os.path.join(root, file))
         if DEBUG_IS:
-            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+            print(done)
     except Exception as e:
         if DEBUG_IS:
             print(f"Error: Failed to delete Telegram downloads: {e}")
+
+async def del_folders():
+    if DEBUG_IS: print(f"{Fore.BLUE}Вход в del_folders{Style.RESET_ALL}\n")
+
+    try:
+        subprocess.run(["su", "-c", "rm", "-rf", "/sdcard/fooViewSave"], shell=False)
+        subprocess.run(["su", "-c", "rm", "-rf", "/sdcard/Pictures/exteraGram"], shell=False)
+        if DEBUG_IS: print(done)
+    except Exception as e:
+        if DEBUG_IS:
+            print(f"{Fore.RED}Err del folder:{Style.RESET_ALL} ", e)
 
 
 async def del_screenshots():
@@ -163,7 +174,7 @@ async def del_screenshots():
                     if app in file:
                         os.remove(os.path.join(root, file))
         if DEBUG_IS:
-            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+            print(done)
     except Exception as e:
         if DEBUG_IS:
             print(f"Error: Failed to delete screenshots: {e}")
@@ -175,30 +186,40 @@ async def del_screenrecords():
     try:
         subprocess.run(f"su -c rm -rf {path_to_screenrecords_folder}", shell=True)
         if DEBUG_IS:
-            print(f"{Fore.GREEN}Done\n{Style.RESET_ALL}")
+            print(done)
     except Exception as e:
         if DEBUG_IS:
             print(f"{Fore.RED}Error: Failed to delete screen recordings:{Style.RESET_ALL}\n {e}")
 
-async def disable_fingerprint_unlock():
+
+async def disable_fingerprint_unlock_app():
     if DEBUG_IS: print(f"{Fore.BLUE}Вход в disable_figerprint{Style.RESET_ALL}")
     if not key:
         try: 
-            subprocess.run("dpm remove-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
+            subprocess.run("su -c dpm remove-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
             subprocess.run(["su","-c","pm disable mstoic.apps.disablefingerprintunlocktemporarily"], shell=False, stdout=subprocess.PIPE)            
+            if DEBUG_IS:print(done)
         except Exception as e:
             if DEBUG_IS:
                 print(f"{Fore.RED}Error:{Style.RESET_ALL}{e}")
     else:
         try:
             subprocess.run(["su","-c","pm enable mstoic.apps.disablefingerprintunlocktemporarily"], shell=False, stdout=subprocess.PIPE)            
-            subprocess.run("dpm set-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
+            subprocess.run("su -c dpm set-active-admin mstoic.apps.disablefingerprintunlocktemporarily/.MyAdmin", shell=True, stdout=subprocess.PIPE)
+            if DEBUG_IS:print(done)
 
         except Exception as e:
             if DEBUG_IS:
                 print(f"{Fore.RED}Error:{Style.RESET_ALL}{e}")
 
-
+# async def hide_folders:
+    # if DEBUG_IS: print(f"{Fore.BLUE}Вход в hide_folders{Style.RESET_ALL}")
+# 
+    # if key:
+        # try:
+            # for folder_name in folders_list:
+                # 
+                # subprocess.run(["su", "-c", "mv", folder_name, )
 
 async def main(key):
     if key:
@@ -206,6 +227,7 @@ async def main(key):
             asyncio.create_task(hide_app(key)),
             asyncio.create_task(hide_termux_home(key)),
             asyncio.create_task(set_default_launcher(key)),
+            asyncio.create_task(disable_fingerprint_unlock_app()),
         ]
         await asyncio.gather(*tasks)
     else:
@@ -216,6 +238,8 @@ async def main(key):
             asyncio.create_task(del_screenshots()),
             asyncio.create_task(del_screenrecords()),
             asyncio.create_task(hide_app(key)),
+            asyncio.create_task(disable_fingerprint_unlock_app()),
+            asyncio.create_task(del_folders())
         ]
         await asyncio.gather(*tasks)
 
@@ -227,4 +251,5 @@ if __name__ == "__main__":
     key = bool(args.unhide)
     bad_apps_list = []
     user_id_ident = False
+    done = f"{Fore.GREEN}Done\n{Style.RESET_ALL}"
     asyncio.run(main(key))

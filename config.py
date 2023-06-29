@@ -15,12 +15,24 @@ path_to_termux_prop = "/data/data/com.termux/files/home/.termux/termux.propertie
 str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home2" + "\n"
 default_str_for_termux_prop = "default-working-directory=/data/data/com.termux/files/home" + "\n"
 
+# Абсолютный путь к папка для перемещения в защищенное место
+folders = (
+    "",
+    "",
+    "",
+    "",
+
+)
+
+
+
+
 # Список арок которые нужно скрыть
 app_list = (
     "com.exteragram.messenger",
     "com.kylecorry.trail_sense",
 	"ua.privatbank.ap24",
-#	"ua.gov.diia.app",
+	"ua.gov.diia.app",
 	"com.looker.droidify", 
 	"dev.ukanth.ufirewall.donate",
 	"com.foobnix.pro.pdf.reader",
@@ -39,6 +51,10 @@ app_list = (
 	"material.hunter",
 	"com.mayank.rucky",
 	"org.omnirom.logcat",
+	"com.brave.browser",
+	"org.torproject.torbrowser",
+	"tw.nekomimi.nekogram",
+	"com.binance.dev"
 	
 	)
 # Такой же список, только для user 10(work profile) !!ПРЕДВАРИТЕЛЬНО ПРОВЕРЬТЕ СОВПАДАЕТ ЛИ USER ID!!
